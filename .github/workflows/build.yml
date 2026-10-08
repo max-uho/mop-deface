@@ -1,0 +1,95 @@
+name: Build desktop installers
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            target: aarch64-apple-darwin
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+          - os: windows-2022
+            target: x86_64-pc-windows-msvc
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+    runs-on: ${{ matrix.os }}
+    env:
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - name: Linux prerequisites
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev librsvg2-dev patchelf pkg-config gstreamer1.0-libav gstreamer1.0-plugins-good gstreamer1.0-plugins-bad
+      - name: macOS build prerequisites
+        if: runner.os == 'macOS'
+        run: brew install pkg-config
+      - name: Windows toolchain
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            base-devel curl tar make pkgconf
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-python
+      - name: Build GPL video tools (Unix)
+        if: runner.os != 'Windows'
+        run: bash scripts/build_ffmpeg.sh
+      - name: Build GPL video tools (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: bash scripts/build_ffmpeg.sh
+      - run: npm ci
+      - name: Install locked Python packages
+        run: python -m pip install --require-hashes -r backend/requirements.lock
+      - name: Build native sidecar and notices
+        run: python scripts/build_sidecar.py --tools build/video-tools/bin
+      - name: Frontend verification
+        run: npm run build && npm test
+      - name: Sidecar offline verification
+        shell: bash
+        run: |
+          export DEFACE_TEST_SIDECAR="$PWD/src-tauri/binaries/deface-worker-${{ matrix.target }}"
+          if [ "$RUNNER_OS" = "Windows" ]; then export DEFACE_TEST_SIDECAR="$DEFACE_TEST_SIDECAR.exe"; fi
+          export DEFACE_TEST_TOOLS="$PWD/build/video-tools/bin"
+          python -m unittest discover -s tests -v
+      - name: Native verification
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+      - name: Rust license inventory
+        run: cargo install cargo-about --version 0.9.2 --features cli --locked
+      - name: Generate Rust notices
+        shell: bash
+        run: cd src-tauri && cargo about generate ../scripts/licenses.hbs --config ../about.toml > resources/licenses/RUST_LICENSES.txt
+      - name: Installers (unsigned development builds)
+        run: npm run tauri -- build --target ${{ matrix.target }}
+      - name: Upload installers and matching source package
+        uses: actions/upload-artifact@v4
+        with:
+          name: deface-${{ matrix.target }}-development
+          path: |
+            src-tauri/target/${{ matrix.target }}/release/bundle/
+            build/sources/*.tar.*
+            scripts/build_ffmpeg.sh
+            scripts/sources.lock.json
+            scripts/verify_sources.py
+            src-tauri/resources/licenses/
+            LICENSING.md

@@ -1,0 +1,15 @@
+- main [ref=f2e3]:
+  - generic [ref=f2e4]:
+    - generic [ref=f2e5]:
+      - heading "Deface" [level=1] [ref=f2e8]
+      - generic [ref=f2e9]: Offline video anonymization
+    - button "About and licenses" [ref=f2e10] [cursor=pointer]
+  - button "Drop a video here or click to choose a file" [ref=f2e14] [cursor=pointer]:
+    - generic [ref=f2e18]: Drop a video here
+    - generic [ref=f2e19]: or click to choose a file
+  - generic [ref=f2e20]:
+    - button "Save MP4…" [disabled]
+  - generic [ref=f2e21]:
+    - paragraph [ref=f2e22]: Choose a video to get started.
+    - alert [ref=f2e23]: Open the desktop application to select and process a video.
+    - paragraph [ref=f2e24]: Automatic detection can miss faces. Review the entire video before sharing.

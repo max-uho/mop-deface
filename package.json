@@ -1,0 +1,40 @@
+{
+  "name": "mop-deface",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "tauri": "tauri",
+    "test": "vitest run",
+    "sidecar": "python scripts/build_sidecar.py --tools build/video-tools/bin",
+    "desktop": "tauri dev",
+    "format": "prettier --write src scripts/*.hbs *.json vite.config.ts .github/workflows/*.yml"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2",
+    "class-variance-authority": "^0.7",
+    "clsx": "^2",
+    "cn": "^0.4.0",
+    "lucide-react": "^0.468",
+    "radix-ui": "^1.7.0",
+    "react": "^19",
+    "react-dom": "^19",
+    "tailwind-merge": "^3"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4",
+    "@tauri-apps/cli": "^2",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "6.1.2",
+    "prettier": "^3.9.9",
+    "tailwindcss": "^4",
+    "typescript": "^5.7",
+    "vite": "8.3.3",
+    "vitest": "5.0.3"
+  }
+}

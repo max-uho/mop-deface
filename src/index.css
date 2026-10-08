@@ -1,0 +1,66 @@
+@import "tailwindcss";
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--card);
+  --color-popover-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: #111;
+  --color-secondary: #27272a;
+  --color-secondary-foreground: var(--foreground);
+  --color-muted: #27272a;
+  --color-muted-foreground: #a1a1aa;
+  --color-accent: #303034;
+  --color-accent-foreground: var(--foreground);
+  --color-destructive: #f87171;
+  --color-border: #303034;
+  --color-input: #3f3f46;
+  --color-ring: #a1a1aa;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+}
+:root {
+  color-scheme: dark;
+  --background: #141416;
+  --foreground: #ededee;
+  --card: #1c1c1f;
+  --primary: #ededee;
+}
+* {
+  border-color: #303034;
+}
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+}
+button,
+[role="combobox"] {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}
+video {
+  background: #09090b;
+  width: 100%;
+  max-height: 420px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+video {
+  height: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}

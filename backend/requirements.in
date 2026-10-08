@@ -1,0 +1,5 @@
+deface==1.5.0
+onnx==1.20.0
+onnxruntime==1.24.3
+pyinstaller==6.22.3
+pip-tools==7.6.2
