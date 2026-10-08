@@ -13,3 +13,6 @@ src-tauri/resources/runtime/
 
 backend/tools/
 *.tsbuildinfo
+
+.playwright-cli/
+output/playwright/
