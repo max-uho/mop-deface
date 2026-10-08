@@ -6,7 +6,7 @@ PREFIX="$ROOT/build/video-tools"
 mkdir -p "$PREFIX" "$ROOT/build/sources"
 cd "$ROOT/build/sources"
 curl -fL --retry 3 https://ffmpeg.org/releases/ffmpeg-8.0.1.tar.xz -o ffmpeg-8.0.1.tar.xz
-curl -fL --retry 3 https://code.videolan.org/videolan/x264/-/archive/31e19f92f00c7003fa115047ce50978bc98c3a0d/x264-31e19f92f00c7003fa115047ce50978bc98c3a0d.tar.gz -o x264.tar.gz
+curl -fL --retry 3 https://codeload.github.com/mirror/x264/tar.gz/31e19f92f00c7003fa115047ce50978bc98c3a0d -o x264.tar.gz
 python3 "$ROOT/scripts/verify_sources.py"
 tar xf ffmpeg-8.0.1.tar.xz
 tar xf x264.tar.gz
