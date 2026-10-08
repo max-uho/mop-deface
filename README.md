@@ -1,6 +1,9 @@
+
 # Deface desktop
 
 Offline Tauri 2 / React / TypeScript application using the actual PyPI deface 1.5.0 package and its CenterFace detector and anonymize_frame API. Always dark. No settings, accounts, onboarding, network calls, telemetry, or automatic saves. Processed/exported videos discard source EXIF/XMP, GPS/location, camera/device, author, creation-time, stream metadata and chapters. MP4 playback structure (codec/dimensions/frame rate, container brands and generic stream identifiers) remains.
+
+<img width="872" height="759" alt="Screenshot 2026-10-08 at 10 37 18" src="https://github.com/user-attachments/assets/36061871-199b-4e4b-b606-5b9e37ae71d2" />
 
 Drop a video or choose a file → automatic anonymization → switch between original and processed preview → Save MP4. Default strong blur, threshold 0.2, mask scale 1.3; detection scaled proportionally to fit 1280 × 720 (output stays at source resolution); first audio stream preserved and transcoded to AAC. The output retains source dimensions and average frame rate. Variable-frame-rate input becomes constant-frame-rate; original timestamps, rotation metadata, HDR, subtitles, chapters, extra audio tracks, and container metadata are not preserved. Odd dimensions use yuv444p, which some webviews cannot preview. Linux DEBs declare GStreamer codec dependencies and AppImages request a bundled media framework; clean-machine codec playback still needs verification. Review the entire video before sharing.
 
