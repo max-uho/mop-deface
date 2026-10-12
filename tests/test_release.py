@@ -36,7 +36,7 @@ class ReleaseTests(unittest.TestCase):
                     'commit': 'test-commit', 'sources': source, 'installers': names}))
             with patch.dict(os.environ, {'GITHUB_SHA': 'test-commit'}):
                 ci_release.aggregate(directory)
-                self.assertEqual(len((directory / 'SHA256SUMS').read_text().splitlines()), 13)
+                self.assertEqual(len((directory / 'SHA256SUMS').read_text().splitlines()), 5)
                 next(directory.glob('*.dmg')).unlink()
                 with self.assertRaises(ValueError):
                     ci_release.aggregate(directory)

@@ -83,14 +83,16 @@ def aggregate(directory):
         raise ValueError('Unexpected or missing installers')
     checksums = []
     for path in sorted(directory.iterdir()):
-        if path.is_file() and path.name != 'SHA256SUMS':
+        if path.is_file() and path.name in actual:
             with path.open('rb') as file:
                 checksums.append(f'{hashlib.file_digest(file, "sha256").hexdigest()}  {path.name}')
     (directory / 'SHA256SUMS').write_text('\n'.join(checksums) + '\n')
     lines += ['', 'Unsigned macOS builds are ad-hoc signed, without Apple notarization. '
               'Unsigned Windows builds can trigger SmartScreen. Signing does not guarantee absence of warnings.',
               '', 'These are initial builds; clean-machine validation is not complete. '
-              'See LICENSING.md in the repository and accompanying sources/notices for unresolved redistribution questions.']
+              'Third-party notices and corresponding GPL sources are included inside the installers. '
+              'See LICENSING.md in the repository for unresolved redistribution questions.',
+              '', 'Installer SHA-256 checksums:', '', '```text', *checksums, '```']
     (ROOT / 'build/release-notes.md').write_text('\n'.join(lines) + '\n')
 
 

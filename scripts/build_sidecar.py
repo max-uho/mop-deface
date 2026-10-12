@@ -36,6 +36,14 @@ def main():
         raise SystemExit('FFmpeg must include libx264.')
     licenses = ROOT / 'src-tauri/resources/licenses'
     licenses.mkdir(parents=True, exist_ok=True)
+    # Ship corresponding GPL sources inside each installer, keeping release assets simple.
+    source_dir = licenses / 'sources'
+    source_dir.mkdir(exist_ok=True)
+    sources = list((ROOT / 'build/sources').glob('*.tar.*'))
+    if len(sources) != 2:
+        raise SystemExit('Missing corresponding FFmpeg/x264 sources')
+    for path in sources + [ROOT / 'scripts/build_ffmpeg.sh', ROOT / 'scripts/sources.lock.json', ROOT / 'scripts/verify_sources.py']:
+        shutil.copy2(path, source_dir / path.name)
     sections = [(ROOT / 'LICENSING.md').read_text(), 'FFmpeg build configuration\n' + configuration]
     for dist in sorted(md.distributions(), key=lambda d: d.metadata['Name'].lower()):
         name = dist.metadata['Name']

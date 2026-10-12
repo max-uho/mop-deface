@@ -219,28 +219,6 @@ jobs:
           path: build/release-assets
       - name: Require all platforms and generate checksums/release notes
         run: python scripts/ci_release.py aggregate
-      - name: Optional GPG signatures for Linux packages and checksums
-        env:
-          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -n "$GPG_PRIVATE_KEY" ]; then
-            export GNUPGHOME="$(mktemp -d)"
-            chmod 700 "$GNUPGHOME"
-            trap 'rm -rf "$GNUPGHOME"' EXIT
-            printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
-            for asset in build/release-assets/*.AppImage build/release-assets/*.deb build/release-assets/SHA256SUMS; do
-              printf '%s' "$GPG_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback --passphrase-fd 0 --armor --detach-sign "$asset"
-              gpg --verify "$asset.asc" "$asset"
-            done
-            gpg --armor --export > build/release-assets/GPG-PUBLIC-KEY.asc
-            printf '\nLinux packages and SHA256SUMS include verified detached GPG signatures.\n' >> build/release-notes.md
-          elif [ -n "$GPG_PASSPHRASE" ]; then
-            echo 'GPG_PASSPHRASE requires GPG_PRIVATE_KEY' >&2
-            exit 1
-          fi
       - name: Publish only the complete release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -253,5 +231,5 @@ jobs:
             echo 'Release already exists; remove its draft explicitly before retrying.' >&2
             exit 1
           fi
-          gh release create "$RELEASE_TAG" build/release-assets/* --verify-tag --draft --title "Deface $RELEASE_TAG" --notes-file build/release-notes.md
+          gh release create "$RELEASE_TAG" build/release-assets/*.dmg build/release-assets/*.exe build/release-assets/*.AppImage build/release-assets/*.deb --verify-tag --draft --title "Deface $RELEASE_TAG" --notes-file build/release-notes.md
           gh release edit "$RELEASE_TAG" --draft=false --latest

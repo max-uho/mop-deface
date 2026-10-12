@@ -13,7 +13,7 @@ Follow the [README setup](README.md#for-developers) and [Tauri prerequisites](ht
 
 `scripts/build_ffmpeg.sh` builds hash-verified FFmpeg/x264 sources with GPL enabled and networking disabled. Windows uses MSYS2 MINGW64. `scripts/build_sidecar.py --tools build/video-tools/bin` freezes Python, deface, ONNX models, native libraries, FFmpeg and ffprobe into `src-tauri/binaries/deface-worker-<triple>[.exe]`. The existing one-file layout is retained; it extracts its runtime into OS temporary storage. No runtime downloads or system Python/FFmpeg are required.
 
-Node, Python and Cargo dependencies use committed lockfiles. CI caches npm, pip, Cargo and native video tools, verifies source hashes even after a cache hit, generates Python/frontend/Rust license inventories and ships corresponding GPL sources beside each installer. Windows bundles the offline WebView2 installer; Linux packages include/request media dependencies through the existing Tauri configuration.
+Node, Python and Cargo dependencies use committed lockfiles. CI caches npm, pip, Cargo and native video tools, verifies source hashes even after a cache hit, generates Python/frontend/Rust license inventories and ships corresponding GPL sources inside each installer. Windows bundles the offline WebView2 installer; Linux packages include/request media dependencies through the existing Tauri configuration.
 
 ## Tests
 
@@ -41,7 +41,7 @@ git tag v0.1.3
 git push origin v0.1.3
 ```
 
-Use the actual new version. A tag must match every version file. A dispatch on an existing version tag can retry a release. Only the final job has `contents: write`. It runs only after all four native builds/tests/signature checks succeed, validates their commit/version/artifact manifests, creates `SHA256SUMS`, uploads five installers plus source/notice archives and manifests to a draft, then publishes it. Failed jobs publish nothing; upload/publishing failures can leave an unpublished draft. Delete that draft explicitly before retrying. Existing releases are never overwritten.
+Use the actual new version. A tag must match every version file. A dispatch on an existing version tag can retry a release. Only the final job has `contents: write`. It runs only after all four native builds/tests/signature checks succeed, validates their commit/version/artifact manifests, calculates installer checksums, uploads only five installers to a draft; manifests and source/notice archives remain CI artifacts, and checksums appear in release notes, then publishes it. Failed jobs publish nothing; upload/publishing failures can leave an unpublished draft. Delete that draft explicitly before retrying. Existing releases are never overwritten.
 
 Each installer filename and release note says `signed` or `unsigned`. macOS ad-hoc signatures are labeled **unsigned**. Without signing secrets builds remain downloadable; partial secret configurations fail rather than silently downgrading. Signing credentials are read only on version tags, never PRs. Restrict repository tag creation and secret access to trusted maintainers.
 
@@ -74,10 +74,6 @@ The workflow uses **Azure Artifact Signing**, not an exportable legacy certifica
 - `AZURE_ARTIFACT_SIGNING_CERTIFICATE_PROFILE`
 
 CI installs pinned `artifact-signing-cli` 0.11.0, uses the runner's Azure CLI/.NET/Windows SDK, and signs bundled FFmpeg tools before freezing, the frozen sidecar, the application executable and NSIS installer through Tauri's custom `signCommand`. SHA-256 signatures use Microsoft's RFC 3161 timestamp service. Every signing operation must produce a valid, timestamped Authenticode signature. Windows signing is unverified until run with real credentials; signing does not guarantee SmartScreen reputation. See the [official Windows signing guide](https://v2.tauri.app/distribute/sign/windows/).
-
-## Optional Linux GPG signing
-
-Set `GPG_PRIVATE_KEY` to an ASCII-armored private key and optionally `GPG_PASSPHRASE`. The final job imports it into an ephemeral keyring, signs AppImage, DEB and `SHA256SUMS`, verifies each detached signature, exports the public key and deletes the keyring. This is detached package signing, not a change to the package format. Without a key Linux artifacts remain unsigned. Obtain the public-key fingerprint from a separate trusted channel before trusting it.
 
 ## Release validation and licensing
 
