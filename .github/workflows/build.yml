@@ -11,6 +11,19 @@ concurrency:
   group: desktop-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 jobs:
+  windows-protocol:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: backend/requirements.lock
+      - run: python -m pip install --require-hashes -r backend/requirements.lock
+      - name: Verify terminal event and cancellation without FFmpeg prerequisites
+        run: python -m unittest discover -s tests -p test_protocol.py -v
   native:
     timeout-minutes: 120
     strategy:
@@ -148,6 +161,8 @@ jobs:
         run: cargo install cargo-about --version 0.9.2 --features cli --locked
       - name: Generate Rust notices
         run: cd src-tauri && cargo about generate ../scripts/licenses.hbs --config ../about.toml > resources/licenses/RUST_LICENSES.txt
+      - name: Remove stale installer output from incremental builds
+        run: python -c 'import shutil; shutil.rmtree("src-tauri/target/${{ matrix.target }}/release/bundle", ignore_errors=True)'
       - name: Build native installers (publishing happens only after all jobs pass)
         uses: tauri-apps/tauri-action@v1
         with:
@@ -188,7 +203,7 @@ jobs:
 
   release:
     if: startsWith(github.ref, 'refs/tags/v') && github.event_name != 'pull_request'
-    needs: native
+    needs: [native, windows-protocol]
     runs-on: ubuntu-22.04
     permissions:
       contents: write

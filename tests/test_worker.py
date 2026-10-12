@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,16 +40,24 @@ class Processing(unittest.TestCase):
         process.stdin.write(json.dumps(req,ensure_ascii=False)+'\n'); process.stdin.flush()
         if cancel:
             process.stdin.write('cancel\n'); process.stdin.flush()
-        events=[]
-        while True:
-            line=process.stdout.readline()
-            if not line:
-                break
-            event=json.loads(line);events.append(event)
-        process.wait(timeout=90)
-        diagnostic=process.stderr.read()
-        process.stdin.close();process.stdout.close();process.stderr.close()
-        self.assertEqual(process.returncode,0,diagnostic)
+        # Drain both channels while leaving stdin open for cancellation. A hard
+        # deadline covers output reads as well as process termination.
+        output = []; errors = []
+        stdout_reader = threading.Thread(target=lambda: output.append(process.stdout.read()), daemon=True)
+        stderr_reader = threading.Thread(target=lambda: errors.append(process.stderr.read()), daemon=True)
+        stdout_reader.start(); stderr_reader.start()
+        try:
+            process.wait(timeout=90)
+        except subprocess.TimeoutExpired:
+            process.kill(); process.wait(timeout=5)
+            stdout_reader.join(timeout=5); stderr_reader.join(timeout=5)
+            self.fail(f'Worker timed out; stdout={output}, stderr={errors}')
+        finally:
+            process.stdin.close()
+        stdout_reader.join(timeout=5); stderr_reader.join(timeout=5)
+        process.stdout.close(); process.stderr.close()
+        self.assertEqual(process.returncode, 0, ''.join(errors))
+        events = [json.loads(line) for line in ''.join(output).splitlines()]
         return events
     def test_actual_face_mask_lazy_dependencies(self):
         events = self.request({'action': 'selftest'})

@@ -13,6 +13,7 @@ for stream in (sys.stdin, sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8", errors="replace")
 
 CANCEL = threading.Event()
+INPUT_STOP = threading.Event()
 PROCESSES = []
 POPEN_OPTIONS = {"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt" else {}
 
@@ -144,8 +145,47 @@ def process(req):
                 child.wait(timeout=2)
         PROCESSES.clear()
 
+def input_ready(fd):
+    if os.name == 'nt':
+        import ctypes
+        from ctypes import wintypes
+        import msvcrt
+        peek = ctypes.WinDLL('kernel32', use_last_error=True).PeekNamedPipe
+        peek.argtypes = [wintypes.HANDLE, wintypes.LPVOID, wintypes.DWORD,
+                         wintypes.LPDWORD, wintypes.LPDWORD, wintypes.LPDWORD]
+        peek.restype = wintypes.BOOL
+        available = wintypes.DWORD()
+        if not peek(msvcrt.get_osfhandle(fd), None, 0, None, ctypes.byref(available), None):
+            return True  # A broken pipe is immediately readable as EOF.
+        if available.value:
+            return True
+        INPUT_STOP.wait(.05)
+        return False
+    import select
+    return bool(select.select([fd], [], [], .05)[0])
+
+
+def input_line(control=False):
+    # Avoid a daemon thread holding TextIOWrapper/BufferedReader's lock during
+    # Python shutdown on Windows. Both request and control input use the same
+    # unbuffered descriptor, so cancellation cannot be lost to read-ahead.
+    data = bytearray()
+    while not INPUT_STOP.is_set():
+        fd = sys.stdin.fileno()
+        # Windows CRT holds its descriptor lock across blocking reads. Poll the
+        # pipe so shutdown can join the listener before closing that descriptor.
+        if control and not input_ready(fd):
+            continue
+        byte = os.read(fd, 1)
+        if not byte:
+            return data.decode('utf-8') if data else None
+        if byte == b'\n':
+            return data.decode('utf-8')
+        data.extend(byte)
+
+
 def cancel_listener():
-    for line in sys.stdin:
+    while (line := input_line(control=True)) is not None:
         if line.strip():
             CANCEL.set()
             for child in list(PROCESSES):
@@ -154,6 +194,8 @@ def cancel_listener():
                 except OSError:
                     pass
             return
+    if INPUT_STOP.is_set():
+        return
     CANCEL.set()
     for child in list(PROCESSES):
         try:
@@ -176,8 +218,9 @@ def selftest():
     return {'message': 'All deface face-mask methods passed'}
 
 def main():
-    req = json.loads(sys.stdin.readline())
-    threading.Thread(target=cancel_listener, daemon=True).start()
+    req = json.loads(input_line())
+    listener = threading.Thread(target=cancel_listener, daemon=True)
+    listener.start()
     try:
         if req['action'] == 'selftest':
             result = selftest()
@@ -198,6 +241,8 @@ def main():
         else:
             emit('error', message=str(exc))
     finally:
+        INPUT_STOP.set()
+        listener.join(timeout=1)
         if req.get('workdir') and (CANCEL.is_set() or not (Path(req['workdir']) / 'result.mp4').is_file()):
             shutil.rmtree(req['workdir'], ignore_errors=True)
 

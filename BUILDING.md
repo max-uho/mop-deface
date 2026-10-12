@@ -37,8 +37,8 @@ PRs and pushes to `main` or the current default branch, `master`, build and test
 To release, update the matching version in `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` and `src-tauri/tauri.conf.json`, commit and push, then:
 
 ```sh
-git tag v0.1.2
-git push origin v0.1.2
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 Use the actual new version. A tag must match every version file. A dispatch on an existing version tag can retry a release. Only the final job has `contents: write`. It runs only after all four native builds/tests/signature checks succeed, validates their commit/version/artifact manifests, creates `SHA256SUMS`, uploads five installers plus source/notice archives and manifests to a draft, then publishes it. Failed jobs publish nothing; upload/publishing failures can leave an unpublished draft. Delete that draft explicitly before retrying. Existing releases are never overwritten.
