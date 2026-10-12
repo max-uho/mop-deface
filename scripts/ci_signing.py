@@ -7,6 +7,7 @@ import secrets
 import subprocess
 import sys
 import time
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / 'build'
@@ -96,9 +97,20 @@ def verify_mac(target):
     bundle = ROOT / f'src-tauri/target/{target}/release/bundle'
     app = bundle / 'macos/Deface.app'
     run('codesign', '--verify', '--deep', '--strict', '--verbose=2', str(app))
+    stapler('staple', app)
     stapler('validate', app)
     run('spctl', '--assess', '--type', 'execute', '--verbose=2', str(app))
     for dmg in bundle.glob('dmg/*.dmg'):
+        # Tauri may continue after its stapler request fails. Build the final disk
+        # image from our explicitly stapled app so it also launches offline.
+        with tempfile.TemporaryDirectory() as temp:
+            staging = Path(temp)
+            run('ditto', str(app), str(staging / 'Deface.app'))
+            (staging / 'Applications').symlink_to('/Applications')
+            run('hdiutil', 'create', '-volname', 'Deface', '-srcfolder', str(staging),
+                '-format', 'UDZO', '-ov', str(dmg))
+        run('codesign', '--force', '--sign', os.environ['APPLE_SIGNING_IDENTITY'],
+            '--timestamp', str(dmg))
         run('codesign', '--verify', '--strict', str(dmg))
         result = subprocess.check_output(['xcrun', 'notarytool', 'submit', str(dmg), '--wait',
             '--apple-id', os.environ['APPLE_ID'], '--password', os.environ['APPLE_PASSWORD'],
