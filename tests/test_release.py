@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import subprocess
 import unittest
 from unittest.mock import patch
 
@@ -9,6 +10,15 @@ from scripts import ci_release, ci_signing
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_stapler_retries_network_failure_only(self):
+        with patch.object(ci_signing, 'run', side_effect=[subprocess.CalledProcessError(68, 'stapler'), None]) as run, patch.object(ci_signing.time, 'sleep'):
+            ci_signing.stapler('validate', Path('app'))
+            self.assertEqual(run.call_count, 2)
+        with patch.object(ci_signing, 'run', side_effect=subprocess.CalledProcessError(65, 'stapler')) as run:
+            with self.assertRaises(subprocess.CalledProcessError):
+                ci_signing.stapler('validate', Path('app'))
+            self.assertEqual(run.call_count, 1)
+
     def test_tag_version_must_match(self):
         with patch.dict(os.environ, {'GITHUB_REF': 'refs/tags/v999.0.0'}):
             with self.assertRaises(ValueError):

@@ -6,6 +6,7 @@ from pathlib import Path
 import secrets
 import subprocess
 import sys
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / 'build'
@@ -14,6 +15,19 @@ BUILD.mkdir(exist_ok=True)
 
 def run(*args):
     subprocess.run(args, check=True)
+
+
+def stapler(action, path):
+    # Error 68 is Apple's ticket-service/network failure, not a signature failure.
+    for attempt in range(5):
+        try:
+            run('xcrun', 'stapler', action, str(path))
+            return
+        except subprocess.CalledProcessError as error:
+            if error.returncode != 68 or attempt == 4:
+                raise
+            print('Apple ticket service unavailable; retrying stapler', flush=True)
+            time.sleep(10 * (attempt + 1))
 
 
 def export(name, value):
@@ -82,7 +96,7 @@ def verify_mac(target):
     bundle = ROOT / f'src-tauri/target/{target}/release/bundle'
     app = bundle / 'macos/Deface.app'
     run('codesign', '--verify', '--deep', '--strict', '--verbose=2', str(app))
-    run('xcrun', 'stapler', 'validate', str(app))
+    stapler('validate', app)
     run('spctl', '--assess', '--type', 'execute', '--verbose=2', str(app))
     for dmg in bundle.glob('dmg/*.dmg'):
         run('codesign', '--verify', '--strict', str(dmg))
@@ -91,8 +105,8 @@ def verify_mac(target):
             '--team-id', os.environ['APPLE_TEAM_ID'], '--output-format', 'json'])
         if json.loads(result)['status'] != 'Accepted':
             raise ValueError('DMG notarization was not accepted')
-        run('xcrun', 'stapler', 'staple', str(dmg))
-        run('xcrun', 'stapler', 'validate', str(dmg))
+        stapler('staple', dmg)
+        stapler('validate', dmg)
         run('spctl', '--assess', '--type', 'open', '--context', 'context:primary-signature',
             '--verbose=2', str(dmg))
 
