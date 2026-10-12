@@ -1264,7 +1264,7 @@ dependencies = [
 
 [[package]]
 name = "http-body-util"
-version = "0.1.6"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23169fe34a5fbcdd3f3862e78fb9b6fccd5f02a6dc6f732547005d45631ce71c"
 dependencies = [
@@ -1277,7 +1277,7 @@ dependencies = [
 
 [[package]]
 name = "http-range"
-version = "0.1.6"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "21dec9db110f5f872ed9699c3ecf50cf16f423502706ba5c72462e28d3157573"
 
@@ -1851,7 +1851,7 @@ dependencies = [
 
 [[package]]
 name = "mop-deface"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "serde_json",
  "tauri",
@@ -2964,7 +2964,7 @@ checksum = "3a219298ac11a56ea9a6d2120044824d6f01aeb034955e7af7bc16858527deea"
 
 [[package]]
 name = "simdutf8"
-version = "0.1.6"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
 
