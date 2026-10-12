@@ -42,11 +42,11 @@ and updates are not guaranteed.
 
 ## For developers
 
-Use Node.js 24, Python 3.14, Rust stable and the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/). Build on the target operating system and CPU architecture.
+Use Node.js 24, Python 3.14 (3.12 on Intel macOS), Rust stable and the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/). Build on the target operating system and CPU architecture.
 
 ```sh
 npm ci
-python3.14 -m venv .venv
+python3 -m venv .venv
 .venv/bin/python -m pip install --require-hashes -r backend/requirements.lock
 bash scripts/build_ffmpeg.sh
 .venv/bin/python scripts/build_sidecar.py --tools build/video-tools/bin

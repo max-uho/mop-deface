@@ -6,7 +6,7 @@ Verified upstream licenses:
 - deface 1.5.0: MIT, https://github.com/ORB-HD/deface/blob/master/LICENSE
 - CenterFace upstream project/model: MIT, Copyright 2019 StarClouds, https://github.com/Star-Clouds/CenterFace/blob/master/LICENSE
   The bundled deface centerface.onnx model originates there. Upstream MIT does not independently establish training dataset rights; review intended use and model provenance before a public release.
-- ONNX Runtime: MIT, https://github.com/microsoft/onnxruntime/blob/main/LICENSE
+- ONNX Runtime 1.24.3 (1.20.1 on Intel macOS): MIT, https://github.com/microsoft/onnxruntime/blob/main/LICENSE
 - ONNX: Apache-2.0, https://github.com/onnx/onnx/blob/main/LICENSE
 - OpenCV >=4.5: Apache-2.0; opencv-python wheel packaging is MIT. Wheels have additional third-party notices and bundled libraries; included package LICENSE files must accompany redistribution.
 - Python: PSF license plus historical licenses, https://docs.python.org/3/license.html

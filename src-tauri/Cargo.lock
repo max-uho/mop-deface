@@ -1851,7 +1851,7 @@ dependencies = [
 
 [[package]]
 name = "mop-deface"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde_json",
  "tauri",

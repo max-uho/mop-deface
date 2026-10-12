@@ -2,7 +2,7 @@
 
 ## Native builds
 
-Follow the [README setup](README.md#for-developers) and [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/). Use native Python 3.14, Node 24 and Rust stable. Do not cross-freeze the Python sidecar.
+Follow the [README setup](README.md#for-developers) and [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/). Use native Python 3.14 (3.12 on Intel macOS), Node 24 and Rust stable. Do not cross-freeze the Python sidecar.
 
 | Runner           | Sidecar target triple    | Installers    |
 | ---------------- | ------------------------ | ------------- |
@@ -35,8 +35,8 @@ PRs and pushes to `main` or the current default branch, `master`, build and test
 To release, update the matching version in `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` and `src-tauri/tauri.conf.json`, commit and push, then:
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
 Use the actual new version. A tag must match every version file. A dispatch on an existing version tag can retry a release. Only the final job has `contents: write`. It runs only after all four native builds/tests/signature checks succeed, validates their commit/version/artifact manifests, creates `SHA256SUMS`, uploads five installers plus source/notice archives and manifests to a draft, then publishes it. Failed jobs publish nothing; upload/publishing failures can leave an unpublished draft. Delete that draft explicitly before retrying. Existing releases are never overwritten.
@@ -82,3 +82,5 @@ Set `GPG_PRIVATE_KEY` to an ASCII-armored private key and optionally `GPG_PASSPH
 Before promoting a release, install every architecture's package on a clean machine without developer tools. Check launch, offline processing, preview playback/seeking, export, cancellation, Unicode paths and uninstall. CI frozen-backend checks are automated coverage, not proof of clean-machine GUI operation. Signing/notarization cannot be verified locally without credentials.
 
 Preserve all existing license texts. See [LICENSING.md](LICENSING.md): the application license, model provenance, wheel/native multimedia dependencies and redistribution obligations remain unresolved. Publishing a binary does not resolve those questions. Release notes disclose them rather than claiming legal clearance.
+
+Intel macOS uses the last available ONNX Runtime Intel wheel, 1.20.1, with Python 3.12. ARM64 macOS, Windows and Linux use 1.24.3 with Python 3.14. The dependency lock includes platform markers and hashes for both; upgrading Intel requires a separately validated source build or newer compatible wheel.
