@@ -21,6 +21,8 @@ Node, Python and Cargo dependencies use committed lockfiles. CI caches npm, pip,
 npm run build
 npm test
 cargo test --locked --manifest-path src-tauri/Cargo.toml
+# Source-worker tests also need native tools beside backend/worker.py:
+python -c 'import shutil; shutil.copytree("build/video-tools/bin", "backend/tools", dirs_exist_ok=True)'
 DEFACE_TEST_TOOLS="$PWD/build/video-tools/bin" \
 DEFACE_TEST_SIDECAR="$PWD/src-tauri/binaries/deface-worker-aarch64-apple-darwin" \
 .venv/bin/python -m unittest discover -s tests -v
@@ -35,8 +37,8 @@ PRs and pushes to `main` or the current default branch, `master`, build and test
 To release, update the matching version in `package.json`, `package-lock.json`, `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock` and `src-tauri/tauri.conf.json`, commit and push, then:
 
 ```sh
-git tag v0.1.1
-git push origin v0.1.1
+git tag v0.1.2
+git push origin v0.1.2
 ```
 
 Use the actual new version. A tag must match every version file. A dispatch on an existing version tag can retry a release. Only the final job has `contents: write`. It runs only after all four native builds/tests/signature checks succeed, validates their commit/version/artifact manifests, creates `SHA256SUMS`, uploads five installers plus source/notice archives and manifests to a draft, then publishes it. Failed jobs publish nothing; upload/publishing failures can leave an unpublished draft. Delete that draft explicitly before retrying. Existing releases are never overwritten.
@@ -58,7 +60,7 @@ Set all six repository Actions Secrets, or none:
 
 Export the certificate/private key from Keychain Access and base64-encode the `.p12`. Never commit it. CI imports it into a temporary keychain before PyInstaller, which signs collected libraries, Python extensions, nested FFmpeg executables and its bootloader. Tauri signs the app with hardened runtime, notarizes it and staples its ticket. CI verifies the app using codesign, stapler and Gatekeeper, submits the DMG to `notarytool`, requires `Accepted`, staples and verifies the DMG. The temporary keychain is deleted even on failure. The Python runtime entitlement permits executable memory for native extension/libffi use.
 
-Without credentials CI uses ad-hoc signing (`-`), with no notarization. Signed paths require verification with real credentials and a clean Mac before treating them as production-ready. See the [official macOS signing guide](https://v2.tauri.app/distribute/sign/macos/) and [PyInstaller signing notes](https://pyinstaller.org/en/stable/feature-notes.html#macos-binary-code-signing).
+Without credentials CI uses ad-hoc signing (`-`), with no notarization and no hardened runtime: library validation cannot accept ad-hoc Python extensions as a signed team. CI also tests the sidecar inside the final macOS app after Tauri signs it. Signed paths require verification with real credentials and a clean Mac before treating them as production-ready. See the [official macOS signing guide](https://v2.tauri.app/distribute/sign/macos/) and [PyInstaller signing notes](https://pyinstaller.org/en/stable/feature-notes.html#macos-binary-code-signing).
 
 ## Windows signing secrets
 

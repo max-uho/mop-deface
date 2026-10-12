@@ -73,7 +73,7 @@ jobs:
           msystem: MINGW64
           update: true
           install: base-devel curl tar make pkgconf mingw-w64-x86_64-gcc mingw-w64-x86_64-python
-      - uses: actions/cache@v4
+      - uses: actions/cache/restore@v4
         id: video-tools
         with:
           path: |
@@ -89,6 +89,14 @@ jobs:
         run: bash scripts/build_ffmpeg.sh
       - name: Verify cached source archives
         run: python scripts/verify_sources.py
+      - name: Cache verified native tools even if later tests fail
+        if: steps.video-tools.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            build/video-tools
+            build/sources/*.tar.*
+          key: ${{ steps.video-tools.outputs.cache-primary-key }}
       - run: npm ci
       - name: Install locked Python packages
         run: python -m pip install --require-hashes -r backend/requirements.lock
@@ -125,7 +133,9 @@ jobs:
       - name: Frontend verification
         run: npm run build && npm test
       - name: Source backend verification
-        run: DEFACE_TEST_TOOLS="$PWD/build/video-tools/bin" python -m unittest discover -s tests -v
+        run: |
+          python -c 'import shutil; shutil.copytree("build/video-tools/bin", "backend/tools", dirs_exist_ok=True)'
+          DEFACE_TEST_TOOLS="$PWD/build/video-tools/bin" python -m unittest discover -s tests -v
       - name: Frozen sidecar and release verification
         run: |
           export DEFACE_TEST_SIDECAR="$PWD/src-tauri/binaries/deface-worker-${{ matrix.target }}"
@@ -142,6 +152,13 @@ jobs:
         uses: tauri-apps/tauri-action@v1
         with:
           args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --config ${{ github.workspace }}/build/tauri-ci.json -- --locked
+      - name: Verify sidecar inside the final macOS app
+        if: runner.os == 'macOS'
+        run: |
+          codesign --verify --deep --strict "src-tauri/target/${{ matrix.target }}/release/bundle/macos/Deface.app"
+          export DEFACE_TEST_SIDECAR="$PWD/src-tauri/target/${{ matrix.target }}/release/bundle/macos/Deface.app/Contents/MacOS/deface-worker"
+          export DEFACE_TEST_TOOLS="$PWD/build/video-tools/bin"
+          python -m unittest discover -s tests -p test_worker.py -v
       - name: Verify macOS signatures and notarization; staple DMG
         if: runner.os == 'macOS' && env.SIGNING_STATUS == 'signed'
         run: python scripts/ci_signing.py verify ${{ matrix.target }}

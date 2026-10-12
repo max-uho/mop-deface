@@ -61,7 +61,7 @@ def prepare():
             for name in ['APPLE_ID', 'APPLE_PASSWORD', 'APPLE_TEAM_ID']:
                 export(name, os.environ[name])
         export('APPLE_SIGNING_IDENTITY', identity)
-        config = {'bundle': {'macOS': {'signingIdentity': identity, 'hardenedRuntime': True,
+        config = {'bundle': {'macOS': {'signingIdentity': identity, 'hardenedRuntime': signed,
                                       'entitlements': 'entitlements.plist'}}}
     elif sys.platform == 'win32':
         names = ['AZURE_CLIENT_ID', 'AZURE_CLIENT_SECRET', 'AZURE_TENANT_ID',
