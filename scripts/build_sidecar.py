@@ -66,6 +66,12 @@ def main():
     # One-file avoids relocating PyInstaller's loader-relative libraries across
     # Tauri's different macOS/Linux/Windows resource layouts.
     command = [sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', '--onefile', '--name', 'deface-worker', '--distpath', str(ROOT / 'sidecar-dist'), '--workpath', str(ROOT / 'build/pyinstaller'), '--specpath', str(ROOT / 'build'), '--recursive-copy-metadata', 'deface', '--collect-all', 'deface', '--collect-all', 'onnx', '--collect-all', 'onnxruntime', '--collect-all', 'cv2', '--collect-all', 'skimage', '--hidden-import', 'skimage.draw', '--exclude-module', 'tkinter', '--exclude-module', 'matplotlib', '--exclude-module', 'pytest', '--add-binary', f'{tools / ("ffmpeg" + extension)}{os.pathsep}tools', '--add-binary', f'{tools / ("ffprobe" + extension)}{os.pathsep}tools', str(ROOT / 'backend/worker.py')]
+    identity = os.environ.get('APPLE_SIGNING_IDENTITY')
+    if sys.platform == 'darwin' and identity and identity != '-':
+        # PyInstaller signs collected extensions/libraries and the bootloader before
+        # embedding them, so the one-file extraction also works with hardened runtime.
+        command[3:3] = ['--codesign-identity', identity, '--osx-entitlements-file',
+                        str(ROOT / 'src-tauri/entitlements.plist')]
     environment = os.environ.copy()
     environment["PYINSTALLER_CONFIG_DIR"] = str(ROOT / "build/pyinstaller-cache")
     subprocess.run(command, check=True, cwd=ROOT, env=environment)
