@@ -33,11 +33,11 @@ jobs:
           - os: macos-15
             target: aarch64-apple-darwin
             python: "3.14"
-            bundles: app,dmg
+            bundles: app
           - os: macos-15-intel
             target: x86_64-apple-darwin
             python: "3.12"
-            bundles: app,dmg
+            bundles: app
           - os: windows-2022
             target: x86_64-pc-windows-msvc
             python: "3.14"
@@ -174,9 +174,9 @@ jobs:
           export DEFACE_TEST_SIDECAR="$PWD/src-tauri/target/${{ matrix.target }}/release/bundle/macos/Deface.app/Contents/MacOS/deface-worker"
           export DEFACE_TEST_TOOLS="$PWD/build/video-tools/bin"
           python -m unittest discover -s tests -p test_worker.py -v
-      - name: Verify macOS signatures and notarization; staple DMG
-        if: runner.os == 'macOS' && env.SIGNING_STATUS == 'signed'
-        run: python scripts/ci_signing.py verify ${{ matrix.target }}
+      - name: Create macOS DMG and verify signatures and notarization
+        if: runner.os == 'macOS'
+        run: python scripts/ci_signing.py package ${{ matrix.target }}
       - name: Verify Windows executable and NSIS installer
         if: runner.os == 'Windows' && env.SIGNING_STATUS == 'signed'
         shell: pwsh

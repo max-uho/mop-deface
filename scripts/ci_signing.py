@@ -93,25 +93,33 @@ def prepare():
     print('Signing status: ' + ('signed (verification required)' if signed else 'unsigned'))
 
 
-def verify_mac(target):
+def package_mac(target):
     bundle = ROOT / f'src-tauri/target/{target}/release/bundle'
     app = bundle / 'macos/Deface.app'
+    signed = os.environ.get('SIGNING_STATUS') == 'signed'
     run('codesign', '--verify', '--deep', '--strict', '--verbose=2', str(app))
-    stapler('staple', app)
-    stapler('validate', app)
-    run('spctl', '--assess', '--type', 'execute', '--verbose=2', str(app))
-    for dmg in bundle.glob('dmg/*.dmg'):
-        # Tauri may continue after its stapler request fails. Build the final disk
-        # image from our explicitly stapled app so it also launches offline.
-        with tempfile.TemporaryDirectory() as temp:
-            staging = Path(temp)
-            run('ditto', str(app), str(staging / 'Deface.app'))
-            (staging / 'Applications').symlink_to('/Applications')
-            run('hdiutil', 'create', '-volname', 'Deface', '-srcfolder', str(staging),
-                '-format', 'UDZO', '-ov', str(dmg))
-        run('codesign', '--force', '--sign', os.environ['APPLE_SIGNING_IDENTITY'],
-            '--timestamp', str(dmg))
-        run('codesign', '--verify', '--strict', str(dmg))
+    if signed:
+        stapler('staple', app)
+        stapler('validate', app)
+        run('spctl', '--assess', '--type', 'execute', '--verbose=2', str(app))
+    # Native disk-image creation works without Finder/AppleScript on CI runners.
+    # Copy only the finalized app so a signed installer contains its stapled ticket.
+    directory = bundle / 'dmg'
+    directory.mkdir(parents=True, exist_ok=True)
+    version = json.loads((ROOT / 'src-tauri/tauri.conf.json').read_text())['version']
+    dmg = directory / f'Deface_{version}_{target}.dmg'
+    with tempfile.TemporaryDirectory() as temp:
+        staging = Path(temp)
+        run('ditto', str(app), str(staging / 'Deface.app'))
+        (staging / 'Applications').symlink_to('/Applications')
+        run('hdiutil', 'create', '-volname', 'Deface', '-srcfolder', str(staging),
+            '-format', 'UDZO', '-ov', str(dmg))
+    command = ['codesign', '--force', '--sign', os.environ['APPLE_SIGNING_IDENTITY']]
+    if signed:
+        command.append('--timestamp')
+    run(*command, str(dmg))
+    run('codesign', '--verify', '--strict', str(dmg))
+    if signed:
         result = subprocess.check_output(['xcrun', 'notarytool', 'submit', str(dmg), '--wait',
             '--apple-id', os.environ['APPLE_ID'], '--password', os.environ['APPLE_PASSWORD'],
             '--team-id', os.environ['APPLE_TEAM_ID'], '--output-format', 'json'])
@@ -127,4 +135,4 @@ if __name__ == '__main__':
     if sys.argv[1] == 'prepare':
         prepare()
     else:
-        verify_mac(sys.argv[2])
+        package_mac(sys.argv[2])
