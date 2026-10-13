@@ -15,8 +15,8 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
           cache: pip
@@ -53,12 +53,12 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: npm
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
           cache: pip
@@ -86,7 +86,7 @@ jobs:
           msystem: MINGW64
           update: true
           install: base-devel curl tar make pkgconf mingw-w64-x86_64-gcc mingw-w64-x86_64-python
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         id: video-tools
         with:
           path: |
@@ -104,7 +104,7 @@ jobs:
         run: python scripts/verify_sources.py
       - name: Cache verified native tools even if later tests fail
         if: steps.video-tools.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: |
             build/video-tools
@@ -191,7 +191,7 @@ jobs:
           signed_arg=""
           if [ "$SIGNING_STATUS" = "signed" ]; then signed_arg="--signed"; fi
           python scripts/ci_release.py stage --target ${{ matrix.target }} $signed_arg
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: installers-${{ matrix.target }}
           path: build/release-assets/*
@@ -208,11 +208,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: installers-*
           merge-multiple: true
