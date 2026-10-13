@@ -5,6 +5,7 @@ import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
@@ -45,6 +46,7 @@ export default function App() {
     [status, setStatus] = useState(""),
     [error, setError] = useState(""),
     [compare, setCompare] = useState(false),
+    [solid, setSolid] = useState(false),
     [drag, setDrag] = useState(false),
     [license, setLicense] = useState(""),
     [exporting, setExporting] = useState(false);
@@ -54,7 +56,8 @@ export default function App() {
     busyRef = useRef(false),
     exportingRef = useRef(false),
     closing = useRef(false),
-    loaded = useRef(false);
+    loaded = useRef(false),
+    solidRef = useRef(false);
   function fail(e: unknown) {
     setError(String(e));
   }
@@ -73,7 +76,7 @@ export default function App() {
         request: {
           action: "process",
           source: path,
-          mode: "blur",
+          mode: solidRef.current ? "solid" : "blur",
           threshold: 0.2,
           mosaic: 20,
           removeAudio: false,
@@ -189,6 +192,12 @@ export default function App() {
       exportingRef.current = false;
       setExporting(false);
     }
+  }
+  function toggleMode(next: boolean) {
+    if (busyRef.current || exportingRef.current) return;
+    solidRef.current = next;
+    setSolid(next);
+    if (source) void load(source);
   }
   function toggleCompare(next: boolean) {
     time.current = video.current?.currentTime ?? 0;
@@ -330,7 +339,23 @@ export default function App() {
             </CardContent>
           </Card>
         </div>
-        <div className="mt-4 flex shrink-0 justify-end gap-2">
+        <div className="mt-4 flex shrink-0 items-center gap-2">
+          <div className="mr-auto flex items-center gap-2 text-xs">
+            <span className={solid ? "text-muted-foreground" : ""}>Blur</span>
+            <Switch
+              id="solid-faces"
+              checked={solid}
+              onCheckedChange={toggleMode}
+              disabled={busy || exporting}
+              aria-label="Use solid black boxes instead of blur"
+            />
+            <label
+              htmlFor="solid-faces"
+              className={solid ? "" : "text-muted-foreground"}
+            >
+              Solid black
+            </label>
+          </div>
           {busy && (
             <Button
               variant="secondary"
